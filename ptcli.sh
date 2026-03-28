@@ -2,7 +2,7 @@
 # ptcli.sh -- Parrish Technology CLI
 # Query llama-server to get shell commands from natural language descriptions
 
-API_KEY="YOUR_API_KEY_HERE"
+API_KEY="3-26API"
 API_URL="http://ai.parrish.biz:56767/v1/chat/completions"
 
 # Colors
@@ -57,11 +57,28 @@ fi
 SYS_OS="$(uname -s)"
 SYS_ARCH="$(uname -m)"
 SYS_KERNEL="$(uname -r)"
-if [ -f /etc/os-release ]; then
+if [ "$SYS_OS" = "Darwin" ]; then
+    SYS_DISTRO="macOS $(sw_vers -productVersion 2>/dev/null || echo 'unknown')"
+elif [ -f /etc/os-release ]; then
     SYS_DISTRO="$(. /etc/os-release && echo "$PRETTY_NAME")"
 else
     SYS_DISTRO="unknown"
 fi
+
+# Editable prompt helper -- macOS bash 3.2 doesn't support read -i
+prompt_editable() {
+    local default="$1"
+    if [ "$SYS_OS" = "Darwin" ] && [ "${BASH_VERSINFO[0]}" -lt 4 ]; then
+        echo -e "  ${C_DIM}(press Enter to accept, or type a modified command)${C_RESET}"
+        echo -e "  ${C_BOLD}$default${C_RESET}"
+        read -e -p "$ " FINAL_CMD
+        if [ -z "$FINAL_CMD" ]; then
+            FINAL_CMD="$default"
+        fi
+    else
+        read -e -i "$default" -p "$ " FINAL_CMD
+    fi
+}
 SYS_SHELL="$(basename "$SHELL")"
 SYS_PVE=""
 if command -v pveversion &>/dev/null; then
@@ -184,16 +201,16 @@ while true; do
                     echo -e "  ${C_MAGENTA}${C_BOLD}$ARG${C_RESET} ${C_DIM}--${C_RESET} $DESC"
                 done
                 echo ""
-                read -e -i "$ECMD" -p "$ " FINAL_CMD
+                prompt_editable "$ECMD"
                 eval "$FINAL_CMD"
             else
                 # Fallback if LLM didn't return proper JSON
-                read -e -i "$CONTENT" -p "$ " FINAL_CMD
+                prompt_editable "$CONTENT"
                 eval "$FINAL_CMD"
             fi
         else
             # Normal mode: present command directly
-            read -e -i "$CONTENT" -p "$ " FINAL_CMD
+            prompt_editable "$CONTENT"
             eval "$FINAL_CMD"
         fi
         exit 0
