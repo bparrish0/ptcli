@@ -3,7 +3,7 @@
 # Query llama-server to get shell commands from natural language descriptions
 
 API_KEY="3-26API"
-API_URL="http://ai.parrish.biz:56767/v1/chat/completions"
+API_URL="http://ai.biz:56767/v1/chat/completions"
 
 # Colors
 if [ -t 1 ]; then
